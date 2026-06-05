@@ -19,7 +19,7 @@ export default function ProtectedRoute({ children }) {
         setTimeout(() => {
           if (!isMounted) return;
           setState({ loading: false, user: null, profileComplete: null });
-        }, 2000);
+        }, 5000);
         return;
       }
 
