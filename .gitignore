@@ -1,0 +1,13 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Local media folders
+Pictures/
+
+# Environment files (contains secrets)
+.env
+.env.*
+!.env.example
