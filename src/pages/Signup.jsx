@@ -19,67 +19,68 @@ export default function Signup() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // ✅ Handle redirect result when user comes back after Google login
-  useEffect(() => {
-    getRedirectResult(au)
-      .then(async (result) => {
-        if (!result) return; // no redirect in progress
-
-        const user = result.user;
-
-        if (!isNmitEmail(user?.email)) {
-          await signOut(au);
-          setError('Only @nmit.ac.in accounts are allowed.');
-          return;
-        }
-
-        const ref = doc(db, 'users', user.uid);
-        await setDoc(ref, {
-          uid: user.uid,
-          email: user.email,
-          name: user.displayName,
-          photo: user.photoURL,
-          lastLogin: serverTimestamp(),
-        }, { merge: true });
-
-        const snapshot = await getDoc(ref);
-        const profileComplete = snapshot.exists() && snapshot.data()?.profileComplete === true;
-        navigate(profileComplete ? '/app' : '/onboarding', { replace: true });
-      })
-      .catch((err) => {
-        console.error('Redirect result error:', err);
-        setError(`Login failed (${err?.code}). Please try again.`);
-      });
-  }, [navigate]);
-
-  // ✅ Existing session check (unchanged)
   useEffect(() => {
     let mounted = true;
-    const unsubscribe = onAuthStateChanged(au, async (user) => {
-      if (!mounted) return;
-      if (!user) { setChecking(false); return; }
 
+    const handleUser = async (user) => {
+      if (!user) {
+        if (mounted) setChecking(false);
+        return;
+      }
       try {
         const ref = doc(db, 'users', user.uid);
         const snapshot = await getDoc(ref);
         const profileComplete = snapshot.exists() && snapshot.data()?.profileComplete === true;
-        navigate(profileComplete ? '/app' : '/onboarding', { replace: true });
+        if (mounted) navigate(profileComplete ? '/app' : '/onboarding', { replace: true });
       } catch (err) {
         console.error('Auth check failed:', err);
-        setChecking(false);
+        if (mounted) setChecking(false);
       }
-    });
+    };
 
-    return () => { mounted = false; unsubscribe(); };
+    getRedirectResult(au)
+      .then(async (result) => {
+        if (!mounted) return;
+
+        if (result?.user) {
+          const user = result.user;
+          if (!isNmitEmail(user?.email)) {
+            await signOut(au);
+            if (mounted) {
+              setError('Only @nmit.ac.in accounts are allowed.');
+              setChecking(false);
+            }
+            return;
+          }
+          const ref = doc(db, 'users', user.uid);
+          await setDoc(ref, {
+            uid: user.uid,
+            email: user.email,
+            name: user.displayName,
+            photo: user.photoURL,
+            lastLogin: serverTimestamp(),
+          }, { merge: true });
+        }
+
+        const unsubscribe = onAuthStateChanged(au, handleUser);
+        return () => unsubscribe();
+      })
+      .catch((err) => {
+        console.error('Redirect error:', err);
+        if (mounted) {
+          setError(`Login failed (${err?.code}). Please try again.`);
+          setChecking(false);
+        }
+      });
+
+    return () => { mounted = false; };
   }, [navigate]);
 
-  // ✅ Now uses redirect instead of popup
   const handleGoogleLogin = async () => {
     setLoading(true);
     setError('');
     try {
       await signInWithRedirect(au, g);
-      // page will redirect to Google, then come back
     } catch (err) {
       console.error('Redirect failed:', err);
       setError(`Login failed (${err?.code}). Please try again.`);
