@@ -7,7 +7,7 @@ const env = import.meta.env || {};
 
 const firebaseConfig = {
   apiKey:            env.VITE_FIREBASE_API_KEY || "AIzaSyBK45OsFP1gu3VEpUPFbcFzwZoZv0fvzyw",
-  authDomain:        env.VITE_FIREBASE_AUTH_DOMAIN || "nitte-connect-b6913.firebaseapp.com",
+  git authDomain:        "nitte-unisync.vercel.app",
   projectId:         env.VITE_FIREBASE_PROJECT_ID || "nitte-connect-b6913",
   storageBucket:     env.VITE_FIREBASE_STORAGE_BUCKET || "nitte-connect-b6913.firebasestorage.app",
   messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID || "53232594967",
